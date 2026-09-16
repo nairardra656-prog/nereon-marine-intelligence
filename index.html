@@ -99,7 +99,36 @@ function missionModal(){modal('Create new mission',`<div class="formGrid"><div c
 $('#newMission').onclick=$('#newMission2').onclick=missionModal;
 // uploads
 function upload(){go('detections');setTimeout(()=>toast('Sonar workspace ready — choose an image to begin AI analysis.'),150)}
-$('#quickUpload').onclick=$('#qaUpload').onclick=$('#uploadBtn').onclick=upload;$('#chooseFile').onclick=()=>$('#fileInput').click();$('#fileInput').onchange=e=>{if(e.target.files[0]){toast('Sonar tile loaded. Running AI pre-analysis…');setTimeout(()=>toast('Analysis complete: 2 candidate objects flagged.'),1200)}};$('#dropZone').ondragover=e=>{e.preventDefault();$('#dropZone').style.borderColor='var(--cyan)'};$('#dropZone').ondrop=e=>{e.preventDefault();$('#dropZone').style.borderColor='';toast('Dropped sonar tile received. Running AI analysis…')};
+$('#fileInput').onchange=async e=>{
+    const file=e.target.files[0];
+    if(!file)return;
+
+    toast('Sonar tile loaded. Sending to NEREON AI…');
+
+    const formData=new FormData();
+    formData.append('file',file);
+
+    try{
+        const response=await fetch('http://127.0.0.1:8000/api/sonar/analyze',{
+            method:'POST',
+            body:formData
+        });
+
+        if(!response.ok){
+            throw new Error('Backend analysis failed');
+        }
+
+        const result=await response.json();
+
+        toast(`Analysis complete: ${result.classification} · ${result.confidence}% confidence`);
+
+        console.log('NEREON AI result:',result);
+
+    }catch(error){
+        console.error(error);
+        toast('Unable to connect to NEREON AI backend.');
+    }
+};
 $('#qaAnalyze').onclick=()=>{go('detections');toast('AI inference started on the selected mission tile.');setTimeout(()=>toast('Inference complete — 2 detections added to review queue.'),1200)};
 $('#qaReport').onclick=()=>{go('reports');toast('Report centre opened.')};$('#qaAlert').onclick=()=>modal('Smart alerts center','<div class="alerts"><div class="alert red"><b>A-061 — Unknown anomaly</b><small>73.4% confidence · analyst review required.</small></div><div class="alert"><b>Fishing gear cluster</b><small>Three detections within 42 m radius.</small></div><div class="alert green"><b>Mission telemetry nominal</b><small>Signal, depth and speed within expected range.</small></div></div>','Acknowledge',()=>toast('Alerts acknowledged.'));
 $('#notifyBtn').onclick=$('#qaAlert').onclick;
