@@ -120,11 +120,54 @@ $('#chooseFile').onclick=()=>$('#fileInput').click();
             throw new Error('Backend analysis failed');
         }
 
-        const result=await response.json();
+       const result=await response.json();
 
-        toast(`Analysis complete: ${result.classification} · ${result.confidence}% confidence`);
+window.lastNereonAnalysis=result;
 
-        console.log('NEREON AI result:',result);
+modal(
+    'NEREON AI Analysis Result',
+    `
+    <div style="display:grid;gap:12px">
+
+        <div class="statBox">
+            <small>CLASSIFICATION</small>
+            <b style="font-size:18px">${result.classification}</b>
+        </div>
+
+        <div class="twoCol">
+            <div class="statBox">
+                <small>CONFIDENCE</small>
+                <b>${result.confidence}%</b>
+            </div>
+
+            <div class="statBox">
+                <small>SEVERITY</small>
+                <b>${result.severity}</b>
+            </div>
+        </div>
+
+        <div class="statBox">
+            <small>IMAGE SIZE</small>
+            <b>${result.image_width} × ${result.image_height}</b>
+        </div>
+
+        <div>
+            <div class="eyebrow">ANALYSIS EVIDENCE</div>
+            <div class="explain" style="margin-top:8px">
+                ${(result.evidence||[]).map(e=>`
+                    <div>
+                        <small>${e}</small>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+    </div>
+    `,
+    'Close'
+);
+
+console.log('NEREON AI result:',result);
 
     }catch(error){
         console.error(error);
