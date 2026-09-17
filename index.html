@@ -185,7 +185,290 @@ $('#openReplay').onclick=()=>go('missions');
 $('#sonarPlay').onclick=()=>{const b=$('#sonarPlay');b.textContent=b.textContent==='Ⅱ'?'▶':'Ⅱ';toast(b.textContent==='Ⅱ'?'Live sonar paused':'Live sonar resumed')};
 $$('[data-open-mission]').forEach(b=>b.onclick=()=>{go('missions');toast('Mission '+b.dataset.openMission+' loaded. Replay and telemetry are available in this prototype.')});
 // report downloads are local demo
-$('#generateReport').onclick=()=>modal('Generate report','<div class="formGrid"><div class="field"><label>Report type</label><select class="select"><option>Mission executive report</option><option>Detection evidence pack</option><option>Analyst CSV export</option></select></div><div class="field"><label>Mission</label><select class="select"><option>NG-0261</option><option>NG-0260</option></select></div></div>','Generate',()=>{toast('Report generated successfully.');setTimeout(()=>toast('Ready: NEREON_NG-0261_Report.pdf'),900)});$$('[data-download]').forEach(b=>b.onclick=()=>toast('Demo export prepared — in production this would download the generated file.'));
+$('#generateReport').onclick=()=>{
+
+    if(!window.lastNereonAnalysis){
+
+        modal(
+            'No analysis available',
+            `
+            <div style="line-height:1.7;color:#91afbc">
+                <p>No sonar analysis has been completed yet.</p>
+
+                <p>
+                Upload a sonar image from the
+                <b style="color:#27c9ee">Detection workspace</b>
+                and run NEREON AI analysis first.
+                </p>
+            </div>
+            `,
+            'Close'
+        );
+
+        return;
+    }
+
+    const result=window.lastNereonAnalysis;
+
+    modal(
+        'Generate AI Analysis Report',
+        `
+        <div class="formGrid">
+
+            <div class="field">
+                <label>Report type</label>
+
+                <select id="reportType" class="select">
+                    <option>Sonar AI Analysis Report</option>
+                    <option>Detection Evidence Report</option>
+                    <option>AI Analysis JSON</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Classification</label>
+                <input value="${result.classification}" readonly>
+            </div>
+
+            <div class="field">
+                <label>Confidence</label>
+                <input value="${result.confidence}%" readonly>
+            </div>
+
+            <div class="field">
+                <label>Severity</label>
+                <input value="${result.severity}" readonly>
+            </div>
+
+        </div>
+        `,
+        'Generate report',
+        ()=>generateAnalysisReport()
+    );
+};
+  function generateAnalysisReport(){
+
+    const result=window.lastNereonAnalysis;
+
+    if(!result){
+        toast('No AI analysis available.');
+        return;
+    }
+
+    const reportDate=new Date().toLocaleString();
+
+    const reportHTML=`
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<title>NEREON AI Sonar Analysis Report</title>
+
+<style>
+
+body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:#06131c;
+    color:#e8f5fa;
+    padding:40px;
+    line-height:1.6;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+.header{
+    border-bottom:1px solid #23647c;
+    padding-bottom:20px;
+    margin-bottom:25px;
+}
+
+.logo{
+    font-size:28px;
+    font-weight:bold;
+    letter-spacing:6px;
+    color:#27c9ee;
+}
+
+.subtitle{
+    color:#8aa8b6;
+    margin-top:5px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.card{
+    background:#0a202c;
+    border:1px solid #1b5268;
+    border-radius:10px;
+    padding:18px;
+}
+
+.label{
+    font-size:11px;
+    color:#7da1b1;
+    text-transform:uppercase;
+    letter-spacing:1px;
+}
+
+.value{
+    font-size:22px;
+    font-weight:bold;
+    margin-top:6px;
+}
+
+.evidence{
+    margin-top:25px;
+}
+
+.evidenceItem{
+    background:#081b26;
+    border-left:3px solid #27c9ee;
+    padding:12px;
+    margin-bottom:8px;
+    border-radius:5px;
+}
+
+.footer{
+    margin-top:35px;
+    padding-top:15px;
+    border-top:1px solid #1a4658;
+    color:#708f9e;
+    font-size:12px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+
+<div class="logo">NEREON</div>
+
+<div class="subtitle">
+Marine Intelligence Systems · AI Sonar Analysis Report
+</div>
+
+</div>
+
+<h2>Sonar Analysis Summary</h2>
+
+<div class="grid">
+
+<div class="card">
+
+<div class="label">
+Classification
+</div>
+
+<div class="value">
+${result.classification}
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="label">
+Confidence
+</div>
+
+<div class="value">
+${result.confidence}%
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="label">
+Severity
+</div>
+
+<div class="value">
+${result.severity}
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="label">
+Image dimensions
+</div>
+
+<div class="value">
+${result.image_width} × ${result.image_height}
+</div>
+
+</div>
+
+</div>
+
+<div class="evidence">
+
+<h2>AI Analysis Evidence</h2>
+
+${(result.evidence||[]).map(e=>`
+
+<div class="evidenceItem">
+${e}
+</div>
+
+`).join('')}
+
+</div>
+
+<div class="footer">
+
+Generated by NEREON AI<br>
+Report generated: ${reportDate}<br>
+Analysis endpoint: /api/sonar/analyze
+
+</div>
+
+</div>
+
+</body>
+</html>
+`;
+
+    const blob=new Blob(
+        [reportHTML],
+        {type:'text/html'}
+    );
+
+    const url=URL.createObjectURL(blob);
+
+    const link=document.createElement('a');
+
+    link.href=url;
+
+    link.download=
+        'NEREON_Sonar_AI_Analysis_Report.html';
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+    toast('NEREON AI analysis report generated.');
+}
 $('#exportAnalytics').onclick=()=>toast('Analytics export prepared as NEREON_analytics.json');$('#runModelCheck').onclick=()=>{toast('Running model health checks…');setTimeout(()=>toast('Model healthy: accuracy 94.2%, drift LOW.'),1000)};
 // collaboration
 $('#inviteBtn').onclick=()=>modal('Invite analyst','<div class="field"><label>Analyst email</label><input placeholder="analyst@nereon.ai"></div><div class="field"><label>Role</label><select class="select"><option>Reviewer</option><option>Mission lead</option><option>Read-only</option></select></div>','Send invite',()=>toast('Invitation sent to analyst workspace.'));$('#addNote').onclick=()=>{const n=$('#noteText').value.trim();if(n){toast('Mission note added to the evidence trail.');$('#noteText').value=''}else toast('Write a note before adding it.')};
