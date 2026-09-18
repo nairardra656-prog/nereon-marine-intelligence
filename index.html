@@ -101,7 +101,7 @@ $('#newMission').onclick=$('#newMission2').onclick=missionModal;
 function upload(){go('detections');setTimeout(()=>toast('Sonar workspace ready — choose an image to begin AI analysis.'),150)}
   $('#quickUpload').onclick=$('#qaUpload').onclick=$('#uploadBtn').onclick=upload;
 $('#chooseFile').onclick=()=>$('#fileInput').click();
-('#fileInput').onchange=async e=>{
+$('#fileInput').onchange=async e=>{
     const file=e.target.files[0];
     if(!file)return;
 
