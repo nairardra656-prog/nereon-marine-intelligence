@@ -582,7 +582,97 @@ function aiAdd(text,user=false){const m=document.createElement('div');m.classNam
 function aiReply(q){const l=currentLang, a=AIANS[l]||AIANS.en, x=q.toLowerCase();if(/upload|sonar|image|imagery|अपलोड|رفع|上传|subir|hochladen|carica|importer/.test(x))return a.upload;if(/detection|debris|anomal|confidence|डिटेक|كشف|检测|deteccion|erkennung|rilev|détection/.test(x))return a.detect;if(/mission|checklist|مهمة|任务|misión|mission|missione/.test(x))return a.mission;if(/review|review|next|पहले|مراج|审核|revis|prüf|révis/.test(x))return a.review;if(/report|pdf|csv|रिपोर्ट|تقرير|报告|informe|bericht|rapporto|rapport/.test(x))return a.report;return a.help}
 function aiAsk(q){if(!q.trim())return;aiAdd(q,true);const t=document.createElement('div');t.className='aiMsg aiTyping';t.textContent=currentLang==='hi'?'सोच रहा हूँ…':currentLang==='ar'?'جارٍ التفكير…':currentLang==='zh'?'正在分析…':'Thinking…';aiBody.appendChild(t);aiBody.scrollTop=aiBody.scrollHeight;setTimeout(()=>{t.remove();aiAdd(aiReply(q))},500)}
 $('#aiFab').onclick=()=>{ai.classList.toggle('open');if(ai.classList.contains('open'))aiText.focus()};$('#aiClose').onclick=()=>ai.classList.remove('open');$('#aiForm').onsubmit=e=>{e.preventDefault();const q=aiText.value;aiText.value='';aiAsk(q)};$$('[data-ai]').forEach(b=>b.onclick=()=>aiAsk(b.dataset.ai));
+ $('#languageSelect').onchange=e=>applyLanguage(e.target.value);
+
 applyLanguage(currentLang);
+
+
+// ================================
+// NEREON SCAN HISTORY
+// ================================
+
+async function loadScanHistory() {
+
+    const historyList = document.getElementById('historyList');
+
+    if (!historyList) return;
+
+    try {
+
+        const response = await fetch(
+            'http://127.0.0.1:8000/api/history'
+        );
+
+        if (!response.ok) {
+            throw new Error('Unable to load scan history');
+        }
+
+        const history = await response.json();
+
+        if (!history.length) {
+
+            historyList.innerHTML = `
+                <div class="feedItem">
+                    <div>
+                        <strong>No scans yet</strong>
+                        <small>Upload a sonar image to create scan history.</small>
+                    </div>
+                </div>
+            `;
+
+            return;
+        }
+
+        historyList.innerHTML = history.map(item => {
+
+            const date = item.created_at
+                ? new Date(item.created_at).toLocaleString()
+                : 'Unknown date';
+
+            return `
+                <div class="feedItem">
+
+                    <div>
+                        <strong>${item.filename}</strong>
+
+                        <small>
+                            ${item.classification}
+                            · ${item.confidence}% confidence
+                        </small>
+
+                        <small>
+                            ${date}
+                        </small>
+                    </div>
+
+                    <span class="statusBadge">
+                        ${item.severity}
+                    </span>
+
+                </div>
+            `;
+
+        }).join('');
+
+    } catch (error) {
+
+        console.error('History loading error:', error);
+
+        historyList.innerHTML = `
+            <div class="feedItem">
+                <div>
+                    <strong>History unavailable</strong>
+                    <small>
+                        Connect to the NEREON backend to load saved scans.
+                    </small>
+                </div>
+            </div>
+        `;
+    }
+}
+
+loadScanHistory();
+
 </script>
 
 <!-- NEREON AI ASSISTANT -->
