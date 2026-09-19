@@ -154,9 +154,46 @@ $('#fileInput').onchange=async e=>{
             throw new Error('Backend analysis failed');
         }
 
-       const result=await response.json();
+       const result = await response.json();
 
-window.lastNereonAnalysis=result;
+// Save analysis to NEREON history database
+try {
+
+    const historyResponse = await fetch('http://127.0.0.1:8000/api/history', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            filename: file.name,
+            classification: result.classification,
+            confidence: result.confidence,
+            severity: result.severity,
+            image_width: result.image_width,
+            image_height: result.image_height,
+            evidence: result.evidence || []
+        })
+    });
+
+    if (!historyResponse.ok) {
+        throw new Error('History save failed');
+    }
+
+    const historyResult = await historyResponse.json();
+
+    console.log('NEREON history saved:', historyResult);
+
+    toast('AI analysis complete · Scan saved to history');
+
+} catch (historyError) {
+
+    console.error('History save error:', historyError);
+
+    toast('AI analysis complete · History could not be saved');
+}
+
+window.lastNereonAnalysis = result;
+
 
 modal(
     'NEREON AI Analysis Result',
