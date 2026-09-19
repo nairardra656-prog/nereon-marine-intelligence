@@ -123,7 +123,22 @@ $('#chooseFile').onclick=()=>$('#fileInput').click();
 $('#fileInput').onchange=async e=>{
     const file=e.target.files[0];
     if(!file)return;
+    // Show uploaded sonar image
+    const preview=document.getElementById('sonarPreview');
+    const previewImage=document.getElementById('previewImage');
+    const previewFileName=document.getElementById('previewFileName');
+    const previewFileInfo=document.getElementById('previewFileInfo');
 
+    preview.style.display='block';
+
+    previewImage.src=URL.createObjectURL(file);
+
+    previewFileName.textContent=file.name;
+
+    previewFileInfo.textContent=
+        `${(file.size/1024/1024).toFixed(2)} MB · ${file.type || 'Image'} · Ready for AI analysis`;
+
+  
     toast('Sonar tile loaded. Sending to NEREON AI…');
 
     const formData=new FormData();
