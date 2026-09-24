@@ -109,7 +109,79 @@ $('#modalClose').onclick=$('#modalCancel').onclick=()=>$('#modal').classList.rem
 // login
 $('#showPass').onclick=()=>{const p=$('#password');p.type=p.type==='password'?'text':'password';$('#showPass').textContent=p.type==='password'?'◉':'◎'};
 $('#forgot').onclick=()=>modal('Password recovery','<p style="color:#88a7b5;font-size:9px;line-height:1.7">This prototype does not connect to a real identity provider. In a production deployment, this action would open your organization’s secure recovery flow.</p>','Close');
-$('#loginForm').onsubmit=e=>{e.preventDefault();const st=$('#loginStatus'),btn=$('#loginBtn');btn.disabled=true;st.textContent='Authenticating operator…';setTimeout(()=>{if($('#email').value.trim()==='operator@nereon.ai'&&$('#password').value==='demo123'){st.textContent='Secure session established.';$('#loginScreen').classList.add('hidden');$('#app').classList.add('show');sessionStorage.setItem('nereonAuth','1');toast('Welcome to NEREON operations.')}else{st.textContent='Demo credentials: operator@nereon.ai / demo123';btn.disabled=false}},800)};
+$('#loginForm').onsubmit=async e=>{
+    e.preventDefault();
+
+    const st=$('#loginStatus');
+    const btn=$('#loginBtn');
+
+    const emailOrOperator=$('#email').value.trim();
+    const password=$('#password').value;
+
+    if(!emailOrOperator || !password){
+        st.textContent='Enter your operator ID/email and password.';
+        return;
+    }
+
+    btn.disabled=true;
+    st.textContent='Authenticating operator…';
+
+    try{
+
+        const response=await fetch(
+            'http://127.0.0.1:8000/api/auth/login',
+            {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({
+                    email_or_operator:emailOrOperator,
+                    password:password
+                })
+            }
+        );
+
+        const result=await response.json();
+
+        if(!response.ok){
+            throw new Error(
+                result.detail || 'Authentication failed'
+            );
+        }
+
+        sessionStorage.setItem(
+            'nereonAuth',
+            '1'
+        );
+
+        sessionStorage.setItem(
+            'nereonUser',
+            JSON.stringify(result)
+        );
+
+        st.textContent='Secure session established.';
+
+        $('#loginScreen').classList.add('hidden');
+        $('#app').classList.add('show');
+
+        toast(
+            `Welcome to NEREON operations, ${result.full_name || 'operator'}.`
+        );
+
+        btn.disabled=false;
+
+    }catch(error){
+
+        console.error('NEREON login error:',error);
+
+        st.textContent=
+            error.message ||
+            'Unable to connect to NEREON authentication service.';
+
+        btn.disabled=false;
+    }
+};
 // nav
 function go(view){$$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));$$('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#sidebar').classList.remove('open');window.scrollTo({top:0,behavior:'smooth'})}
 $$('[data-view]').forEach(b=>b.onclick=()=>go(b.dataset.view));$('#mobileMenu').onclick=()=>$('#sidebar').classList.toggle('open');
