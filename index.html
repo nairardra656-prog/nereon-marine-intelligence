@@ -40,7 +40,17 @@
       <div class="field"><label>Work email or operator ID</label><input id="email" required placeholder="operator@nereon.ai" autocomplete="username"></div>
       <div class="field"><label>Password</label><div class="passwordWrap"><input id="password" type="password" required placeholder="Enter your password" autocomplete="current-password"><button class="eyeBtn" type="button" id="showPass" aria-label="Show password">◉</button></div></div>
       <div class="loginRow"><label class="check"><input id="remember" type="checkbox" checked> Remember this device</label><button class="textBtn" type="button" id="forgot">Forgot password?</button></div>
-      <button class="primary" id="loginBtn" type="submit">Sign in to NEREON</button><div class="loginStatus" id="loginStatus"></div>
+      <button class="primary" id="loginBtn" type="submit">Sign in to NEREON</button>
+
+<button
+    class="textBtn"
+    id="createAccountBtn"
+    type="button"
+    style="width:100%;margin-top:14px;padding:10px;">
+    Create a NEREON account
+</button>
+
+<div class="loginStatus" id="loginStatus"></div>
       <div class="loginFoot">Demo access: <span class="demo">operator@nereon.ai</span> / <span class="demo">demo123</span><br>Prototype authentication is local and does not transmit credentials.</div>
     </form>
   </div>
