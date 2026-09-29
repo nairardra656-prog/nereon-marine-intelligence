@@ -109,7 +109,115 @@ $('#modalClose').onclick=$('#modalCancel').onclick=()=>$('#modal').classList.rem
 // login
 $('#showPass').onclick=()=>{const p=$('#password');p.type=p.type==='password'?'text':'password';$('#showPass').textContent=p.type==='password'?'◉':'◎'};
 $('#forgot').onclick=()=>modal('Password recovery','<p style="color:#88a7b5;font-size:9px;line-height:1.7">This prototype does not connect to a real identity provider. In a production deployment, this action would open your organization’s secure recovery flow.</p>','Close');
-$('#loginForm').onsubmit=async e=>{
+$('#createAccountBtn').onclick=()=>{
+
+    $('#loginForm').style.display='none';
+    $('#createAccountBtn').style.display='none';
+    $('#createAccountPanel').style.display='block';
+    $('#loginStatus').textContent='';
+
+};
+
+$('#backToLoginBtn').onclick=()=>{
+
+    $('#createAccountPanel').style.display='none';
+    $('#loginForm').style.display='block';
+    $('#createAccountBtn').style.display='block';
+    $('#registerStatus').textContent='';
+
+};
+
+  
+$('#registerBtn').onclick=async()=>{
+
+    const status=$('#registerStatus');
+    const btn=$('#registerBtn');
+
+    const fullName=$('#registerFullName').value.trim();
+    const email=$('#registerEmail').value.trim();
+    const operatorId=$('#registerOperatorId').value.trim();
+    const workerField=$('#registerWorkerField').value;
+    const organization=$('#registerOrganization').value.trim();
+    const password=$('#registerPassword').value;
+    const confirmPassword=$('#registerConfirmPassword').value;
+
+    if(!fullName || !email || !operatorId || !workerField || !password){
+        status.textContent='Please complete all required fields.';
+        return;
+    }
+
+    if(password.length<6){
+        status.textContent='Password must be at least 6 characters.';
+        return;
+    }
+
+    if(password!==confirmPassword){
+        status.textContent='Passwords do not match.';
+        return;
+    }
+
+    btn.disabled=true;
+    status.textContent='Creating your secure operator account…';
+
+    try{
+
+        const response=await fetch(
+            'http://127.0.0.1:8000/api/auth/register',
+            {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({
+                    full_name:fullName,
+                    email:email,
+                    operator_id:operatorId,
+                    password:password,
+                    ocean_worker_field:workerField,
+                    organization:organization || null
+                })
+            }
+        );
+
+        const result=await response.json();
+
+        if(!response.ok){
+            throw new Error(
+                result.detail || 'Account registration failed.'
+            );
+        }
+
+        $('#email').value=email;
+        $('#password').value='';
+
+        $('#createAccountPanel').style.display='none';
+        $('#loginForm').style.display='block';
+        $('#createAccountBtn').style.display='block';
+
+        $('#loginStatus').textContent=
+            'Account created successfully. Sign in with your new credentials.';
+
+        status.textContent='';
+
+        $('#registerPassword').value='';
+        $('#registerConfirmPassword').value='';
+
+        toast('NEREON operator account created successfully.');
+
+    }catch(error){
+
+        console.error('NEREON registration error:',error);
+
+        status.textContent=
+            error.message || 'Unable to connect to the registration service.';
+
+    }finally{
+
+        btn.disabled=false;
+
+    }
+};
+  $('#loginForm').onsubmit=async e=>{
     e.preventDefault();
 
     const st=$('#loginStatus');
